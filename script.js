@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' }); // or 'audio/webm' depending on browser
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                 await processAudio(audioBlob);
 
                 // Stop all tracks to release microphone
@@ -72,12 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Convert Blob to Base64
             const base64Audio = await blobToBase64(audioBlob);
 
-            // Prepare the request payload for OpenRouter (OpenAI compatible)
-            // Note: x-ai/grok-4.1-fast might expect a specific format. 
-            // We will try the standard multimodal format.
-
             const payload = {
-                "model": "x-ai/grok-4.1-fast:free",
+                "model": "google/gemini-2.0-flash-exp:free",
                 "messages": [
                     {
                         "role": "user",
@@ -87,16 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 "text": "Transcribe this Arabic audio to text exactly as spoken."
                             },
                             {
-                                "type": "image_url", // Wait, Grok might treat audio as a file upload or specific input type. 
-                                // Standard OpenAI audio input is usually separate endpoint (transcriptions) OR multimodal chat.
-                                // Let's try the multimodal chat format if supported, otherwise we might need a different approach.
-                                // BUT, since standard OpenAI chat completion doesn't strictly support "audio_url" or "input_audio" in the public docs widely yet (it's new),
-                                // and OpenRouter usually proxies.
-
-                                // Let's try the "input_audio" format which is becoming standard for some models.
-                                // If this fails, we might need to assume the user meant "use the model to process text" but they said "convert user sound into text".
-                                // Given the specific model request, I will try the most likely multimodal format.
-
                                 "type": "input_audio",
                                 "input_audio": {
                                     "data": base64Audio,
@@ -107,23 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 ]
             };
-
-            // NOTE: If the model doesn't support direct audio input via chat completions, 
-            // we would normally use the /v1/audio/transcriptions endpoint.
-            // However, the user specified a CHAT model (grok-4.1-fast).
-            // Let's try to send it to the chat endpoint.
-
-            // Correction: Most "Speech to Text" via LLM uses the transcription endpoint (Whisper-like).
-            // If Grok is multimodal, it might accept it. 
-            // Let's implement a fallback or a specific check? No, let's just try the chat completion first.
-
-            // Actually, for safety, let's try to use the standard /v1/chat/completions with the content.
-            // If that fails, we might need to inform the user.
-
-            // Wait, "input_audio" is not a standard field in "content" array for all providers yet.
-            // Let's try the "image_url" hack if it was video? No.
-
-            // Let's stick to the "input_audio" field in the message content, which is the OpenAI Realtime/Multimodal spec.
 
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
@@ -138,19 +107,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 const errData = await response.json();
-                throw new Error(errData.error?.message || 'API Error');
+                console.error("API Error Details:", errData);
+
+                if (response.status === 401) {
+                    throw new Error('User not found or Invalid API Key. Please check your key.');
+                } else if (response.status === 402) {
+                    throw new Error('Insufficient credits.');
+                } else {
+                    throw new Error(errData.error?.message || `API Error (${response.status})`);
+                }
             }
 
             const data = await response.json();
-            const text = data.choices[0].message.content;
 
-            transcriptionArea.value = text;
-            statusText.textContent = 'تم التحويل بنجاح';
+            if (data.choices && data.choices.length > 0) {
+                const text = data.choices[0].message.content;
+                transcriptionArea.value = text;
+                statusText.textContent = 'تم التحويل بنجاح';
+            } else {
+                throw new Error('No content returned from API');
+            }
 
         } catch (error) {
             console.error('API Error:', error);
-            statusText.textContent = 'حدث خطأ: ' + error.message;
-            transcriptionArea.value = 'Error: ' + error.message + '\n\nNote: Ensure the model supports audio input via the Chat API.';
+            statusText.textContent = 'حدث خطأ';
+            transcriptionArea.value = `Error: ${error.message}\n\nTroubleshooting:\n1. Check if your API key is correct.\n2. Ensure the model supports audio input.\n3. Check console for details.`;
         }
     }
 
