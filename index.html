@@ -33,6 +33,37 @@
                 </button>
                 <div id="status" class="status-text">اضغط للتحدث</div>
             </div>
+
+            <div class="output-area">
+                <textarea id="transcription" placeholder="سيبدأ النص بالظهور هنا..." readonly></textarea>
+                <div class="actions">
+                    <button id="copyBtn" class="action-btn" title="نسخ النص">
+                        <i class="fas fa-copy"></i>
+                        نسخ
+                    </button>
+                    <button id="clearBtn" class="action-btn secondary" title="مسح النص">
+                        <i class="fas fa-trash-alt"></i>
+                        مسح
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="api-settings">
+            <details>
+                <summary>إعدادات API (اختياري)</summary>
+                <div class="input-group">
+                    <label for="apiKey">مفتاح OpenRouter API</label>
+                    <input type="password" id="apiKey" placeholder="sk-or-..."
+                        value="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">
+                </div>
+                <div class="input-group">
+                    <label for="model">الموديل</label>
+                    <input type="text" id="model" value="x-ai/grok-4.1-fast:free" readonly>
+                </div>
+                <p class="note">ملاحظة: يتم استخدام موديل x-ai/grok-4.1-fast:free لتحويل الصوت.</p>
+            </details>
+        </div>
     </main>
 
     <script src="script.js"></script>
