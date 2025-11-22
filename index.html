@@ -48,7 +48,20 @@
                 </div>
             </div>
         </div>
-        </details>
+
+        <div class="api-settings">
+            <details open>
+                <summary>إعدادات API</summary>
+                <div class="input-group">
+                    <label for="apiKey">مفتاح OpenRouter API</label>
+                    <input type="password" id="apiKey" placeholder="sk-or-..." value="">
+                </div>
+                <div class="input-group">
+                    <label for="model">الموديل</label>
+                    <input type="text" id="model" value="x-ai/grok-4.1-fast:free" readonly>
+                </div>
+                <p class="note">ملاحظة: يتم استخدام موديل x-ai/grok-4.1-fast:free لتحويل الصوت.</p>
+            </details>
         </div>
     </main>
 
