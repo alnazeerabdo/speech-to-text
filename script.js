@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const base64Audio = await blobToBase64(audioBlob);
 
             const payload = {
-                "model": "x-ai/grok-4.1-fast:free",
+                "model": "google/gemini-2.0-flash-exp:free",
                 "messages": [
                     {
                         "role": "user",
